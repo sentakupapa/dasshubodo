@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: dasshubodo
+    runtime: node
+    plan: starter
+    region: singapore
+    branch: claude/annual-dashboard-webapp-ikj8vb
+    buildCommand: npm ci && npm run build
+    startCommand: npx next start -p $PORT
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATA_DIR
+        value: /var/data
+    disk:
+      name: dasshubodo-data
+      mountPath: /var/data
+      sizeGB: 1

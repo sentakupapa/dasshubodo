@@ -52,6 +52,23 @@ npm run start
 
 現状は「社内ネットワーク内からのみアクセス可能」という前提で認証機能を実装していません。社外に公開する場合は、リバースプロキシ（Basic認証やVPN等）でのアクセス制限を追加してください。
 
+## Renderへのデプロイ（GitHub連携で自動デプロイ）
+
+リポジトリ直下の `render.yaml`（Renderのblueprint）を使うと、GitHub連携だけでビルド・永続ディスクの設定まで自動化できます。
+
+1. [Render](https://render.com) にログイン（GitHubアカウントでサインアップ可）
+2. ダッシュボードで **New +** → **Blueprint** を選択
+3. このリポジトリ（`sentakupapa/dasshubodo`）を接続し、対象ブランチ（`claude/annual-dashboard-webapp-ikj8vb`）を選択
+4. `render.yaml` の内容が自動検出されるので、内容を確認して **Apply**
+5. 初回デプロイが完了すると、Renderが発行するURL（`https://dasshubodo-xxxx.onrender.com` のような形式）でアクセスできます
+6. 以降は対象ブランチにpushするたびに自動で再デプロイされます
+
+**注意点**
+
+- `data/app.db` を永続化するために `render.yaml` で1GBの永続ディスクを設定しています。永続ディスクは無料プランでは使えないため、有料プラン（Starter以上）が必要です
+- 社内ネットワーク限定にしたい場合は、Render側でIP許可リストを設定するか、Renderの発行するURLを社内でのみ共有してください（現状アプリ自体には認証機能がありません）
+- 初回起動時、DBが空であれば同梱の参考データ（`data/seed/store-data.xlsx`）が自動で取り込まれます
+
 ## Excelフォーマット
 
 アップロードするExcelには次の4シートが必要です（シート名は固定）。
