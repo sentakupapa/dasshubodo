@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 
 type UploadResult = {
   ok?: boolean;
-  importedRows?: number;
-  warnings?: string[];
+  storeCount?: number;
+  salesRows?: number;
+  item14Rows?: number;
+  processingRows?: number;
   error?: string;
-  details?: string[];
 };
 
 export default function UploadForm() {
@@ -46,11 +47,13 @@ export default function UploadForm() {
     <div className="bg-white border rounded-lg p-6">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">CSVファイル</label>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Excelファイル（.xlsx）
+          </label>
           <input
             ref={inputRef}
             type="file"
-            accept=".csv,text/csv"
+            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             required
             className="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-slate-900 file:text-white file:text-sm hover:file:bg-slate-800"
           />
@@ -68,24 +71,11 @@ export default function UploadForm() {
         <div className="mt-4 text-sm">
           {result.ok ? (
             <p className="text-green-700">
-              {result.importedRows}件のデータを取り込みました。
+              取り込み完了：店舗 {result.storeCount}件 / 売上データ {result.salesRows}行 / 14項目データ{' '}
+              {result.item14Rows}行 / 加工データ {result.processingRows}行
             </p>
           ) : (
             <p className="text-red-700">{result.error}</p>
-          )}
-          {result.details && result.details.length > 0 && (
-            <ul className="mt-2 text-red-600 list-disc list-inside">
-              {result.details.slice(0, 20).map((d, i) => (
-                <li key={i}>{d}</li>
-              ))}
-            </ul>
-          )}
-          {result.warnings && result.warnings.length > 0 && (
-            <ul className="mt-2 text-amber-700 list-disc list-inside">
-              {result.warnings.slice(0, 20).map((w, i) => (
-                <li key={i}>{w}</li>
-              ))}
-            </ul>
           )}
         </div>
       )}

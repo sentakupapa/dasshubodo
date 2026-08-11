@@ -10,8 +10,8 @@
   },
   "dependencies": {
     "better-sqlite3": "^11.3.0",
+    "exceljs": "^4.4.0",
     "next": "14.2.35",
-    "papaparse": "^5.4.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^2.12.7"
@@ -19,7 +19,6 @@
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",
     "@types/node": "^20.14.15",
-    "@types/papaparse": "^5.3.14",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.19",

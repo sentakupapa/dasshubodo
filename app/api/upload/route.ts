@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { parseCsv } from '@/lib/csv';
-import { upsertRecords, recordUpload } from '@/lib/db';
+import { parseWorkbook, XlsxParseError } from '@/lib/xlsx-parser';
+import { replaceAllData } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,25 +9,29 @@ export async function POST(req: NextRequest) {
   const file = formData.get('file');
 
   if (!file || !(file instanceof File)) {
-    return NextResponse.json({ error: 'CSVファイルが指定されていません' }, { status: 400 });
+    return NextResponse.json({ error: 'Excelファイルが指定されていません' }, { status: 400 });
   }
 
-  const content = await file.text();
-  const { rows, errors } = parseCsv(content);
+  const buffer = Buffer.from(await file.arrayBuffer());
 
-  if (rows.length === 0) {
+  try {
+    const payload = await parseWorkbook(buffer, file.name);
+    replaceAllData(payload);
+
+    return NextResponse.json({
+      ok: true,
+      storeCount: payload.stores.length,
+      salesRows: payload.sales.length,
+      item14Rows: payload.item14.length,
+      processingRows: payload.processing.length,
+    });
+  } catch (err) {
+    if (err instanceof XlsxParseError) {
+      return NextResponse.json({ error: err.message }, { status: 400 });
+    }
     return NextResponse.json(
-      { error: '取り込めるデータがありませんでした', details: errors },
+      { error: 'Excelファイルの読み込み中にエラーが発生しました。ファイル形式を確認してください。' },
       { status: 400 }
     );
   }
-
-  upsertRecords(rows);
-  recordUpload(file.name, rows.length);
-
-  return NextResponse.json({
-    ok: true,
-    importedRows: rows.length,
-    warnings: errors,
-  });
 }
