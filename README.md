@@ -78,7 +78,8 @@ npm run start
 3. ブランチは `claude/annual-dashboard-webapp-ikj8vb` を指定
 4. `railway.toml` が自動検出され、ビルド・起動コマンドが設定された状態でデプロイが始まる
 5. デプロイ完了後、サービスの **Settings → Networking → Generate Domain** で公開URL（`https://xxxx.up.railway.app`）を発行
-6. 続けて **Settings → Volumes → New Volume** で永続ボリュームを追加し、マウント先を `/data` に設定
+6. 永続ボリュームを追加する：プロジェクトのキャンバス画面でサービスのタイルを**右クリック**（または「⋯」メニュー）→ **Attach Volume** → Mount Pathに `/data` を指定して保存
+   （見つからない場合は `Cmd/Ctrl+K` でコマンドパレットを開き「volume」を検索）
 7. **Variables** タブで環境変数 `DATA_DIR=/data` を追加（ボリュームのマウント先とアプリのDB保存先を一致させるため）
 8. 変数を追加すると自動で再デプロイされる。デプロイ完了後、発行されたURLにアクセスすればダッシュボードが開く
 9. 以降は対象ブランチにpushするたびに自動で再デプロイされる
