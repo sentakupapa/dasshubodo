@@ -1,9 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 import { parseWorkbook } from './xlsx-parser';
-import { replaceAllData, hasAnyData } from './db';
+import { upsertPeriodData, hasAnyData } from './db';
 
 const SEED_PATH = path.join(process.cwd(), 'data', 'seed', 'store-data.xlsx');
+
+/** The bundled reference workbook's 本年/前年 columns are treated as 第36期／第35期. */
+const SEED_PERIOD = 36;
 
 let attempted = false;
 
@@ -20,6 +23,6 @@ export async function ensureSeeded(): Promise<void> {
   if (!fs.existsSync(SEED_PATH)) return;
 
   const buffer = fs.readFileSync(SEED_PATH);
-  const payload = await parseWorkbook(buffer, 'store-data.xlsx (初期データ)');
-  replaceAllData(payload);
+  const payload = await parseWorkbook(buffer, 'store-data.xlsx (初期データ)', SEED_PERIOD);
+  upsertPeriodData(payload);
 }

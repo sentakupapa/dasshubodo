@@ -1,5 +1,5 @@
 import ExcelJS from 'exceljs';
-import type { ImportPayload, SalesRow, Item14Row, ProcessingRow, YearType } from './db';
+import type { ImportPayload, SalesRow, Item14Row, ProcessingRow } from './db';
 
 const SHEET_STORES = '店舗マスタ';
 const SHEET_SALES = '元データ';
@@ -82,7 +82,7 @@ function parseStores(wb: ExcelJS.Workbook): string[] {
   return stores;
 }
 
-function parseSales(wb: ExcelJS.Workbook): SalesRow[] {
+function parseSales(wb: ExcelJS.Workbook, targetPeriod: number): SalesRow[] {
   const sheet = getSheet(wb, SHEET_SALES);
   const headers = headerIndexMap(sheet);
   const storeCol = requireColumn(headers, '店舗名', SHEET_SALES);
@@ -98,7 +98,7 @@ function parseSales(wb: ExcelJS.Workbook): SalesRow[] {
   sheet.eachRow((row, rowNumber) => {
     if (rowNumber === 1) return;
     const store = toText(row.getCell(storeCol).value);
-    const yearType = toText(row.getCell(yearCol).value) as YearType;
+    const yearType = toText(row.getCell(yearCol).value);
     const month = toNumberOrNull(row.getCell(monthCol).value);
     const item = toText(row.getCell(itemCol).value);
 
@@ -108,7 +108,7 @@ function parseSales(wb: ExcelJS.Workbook): SalesRow[] {
 
     rows.push({
       store,
-      yearType,
+      period: yearType === '本年' ? targetPeriod : targetPeriod - 1,
       month,
       item,
       salesAmount: salesCol ? toNumberOrNull(row.getCell(salesCol).value) : null,
@@ -123,7 +123,7 @@ function parseSales(wb: ExcelJS.Workbook): SalesRow[] {
 const FIXED_SALES_HEADERS = new Set(['店舗名', '年区分', '月']);
 const FIXED_PROCESSING_HEADERS = new Set(['店舗名', '月']);
 
-function parseItem14(wb: ExcelJS.Workbook): Item14Row[] {
+function parseItem14(wb: ExcelJS.Workbook, targetPeriod: number): Item14Row[] {
   const sheet = getSheet(wb, SHEET_ITEM14);
   const headers = headerIndexMap(sheet);
   const storeCol = requireColumn(headers, '店舗名', SHEET_ITEM14);
@@ -135,22 +135,23 @@ function parseItem14(wb: ExcelJS.Workbook): Item14Row[] {
   sheet.eachRow((row, rowNumber) => {
     if (rowNumber === 1) return;
     const store = toText(row.getCell(storeCol).value);
-    const yearType = toText(row.getCell(yearCol).value) as YearType;
+    const yearType = toText(row.getCell(yearCol).value);
     const month = toNumberOrNull(row.getCell(monthCol).value);
     if (!store) return;
     if (yearType !== '本年' && yearType !== '前年') return;
     if (month === null || month < 1 || month > 12) return;
 
+    const period = yearType === '本年' ? targetPeriod : targetPeriod - 1;
     for (const [item, col] of itemCols) {
       const pointCount = toNumberOrNull(row.getCell(col).value);
       if (pointCount === null) continue;
-      rows.push({ store, yearType, month, item, pointCount });
+      rows.push({ store, period, month, item, pointCount });
     }
   });
   return rows;
 }
 
-function parseProcessing(wb: ExcelJS.Workbook): ProcessingRow[] {
+function parseProcessing(wb: ExcelJS.Workbook, targetPeriod: number): ProcessingRow[] {
   const sheet = getSheet(wb, SHEET_PROCESSING);
   const headers = headerIndexMap(sheet);
   const storeCol = requireColumn(headers, '店舗名', SHEET_PROCESSING);
@@ -168,24 +169,32 @@ function parseProcessing(wb: ExcelJS.Workbook): ProcessingRow[] {
     for (const [item, col] of itemCols) {
       const pointCount = toNumberOrNull(row.getCell(col).value);
       if (pointCount === null) continue;
-      rows.push({ store, month, item, pointCount });
+      rows.push({ store, period: targetPeriod, month, item, pointCount });
     }
   });
   return rows;
 }
 
-export async function parseWorkbook(buffer: Buffer, filename: string): Promise<ImportPayload> {
+export async function parseWorkbook(
+  buffer: Buffer,
+  filename: string,
+  targetPeriod: number
+): Promise<ImportPayload> {
+  if (!Number.isInteger(targetPeriod) || targetPeriod < 1) {
+    throw new XlsxParseError('期は1以上の整数で指定してください');
+  }
+
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.load(buffer as unknown as ExcelJS.Buffer);
 
   const stores = parseStores(wb);
-  const sales = parseSales(wb);
-  const item14 = parseItem14(wb);
-  const processing = parseProcessing(wb);
+  const sales = parseSales(wb, targetPeriod);
+  const item14 = parseItem14(wb, targetPeriod);
+  const processing = parseProcessing(wb, targetPeriod);
 
   if (sales.length === 0) {
     throw new XlsxParseError('元データシートから有効な行を取り込めませんでした');
   }
 
-  return { filename, stores, sales, item14, processing };
+  return { filename, period: targetPeriod, stores, sales, item14, processing };
 }

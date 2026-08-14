@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 type UploadResult = {
   ok?: boolean;
+  period?: number;
   storeCount?: number;
   salesRows?: number;
   item14Rows?: number;
@@ -13,21 +14,24 @@ type UploadResult = {
 };
 
 export default function UploadForm() {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const periodRef = useRef<HTMLInputElement>(null);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<UploadResult | null>(null);
   const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const file = inputRef.current?.files?.[0];
-    if (!file) return;
+    const file = fileRef.current?.files?.[0];
+    const period = periodRef.current?.value;
+    if (!file || !period) return;
 
     setSubmitting(true);
     setResult(null);
 
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('period', period);
 
     try {
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
@@ -48,10 +52,27 @@ export default function UploadForm() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">
+            このExcelは第何期のデータですか？
+          </label>
+          <input
+            ref={periodRef}
+            type="number"
+            min={1}
+            step={1}
+            required
+            placeholder="例: 36"
+            className="block w-32 border border-slate-300 rounded-md px-3 py-2 text-sm"
+          />
+          <p className="text-xs text-slate-500 mt-1">
+            シート内の「本年」列がこの期、「前年」列は自動的に1つ前の期として取り込まれます。
+          </p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
             Excelファイル（.xlsx）
           </label>
           <input
-            ref={inputRef}
+            ref={fileRef}
             type="file"
             accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             required
@@ -71,8 +92,9 @@ export default function UploadForm() {
         <div className="mt-4 text-sm">
           {result.ok ? (
             <p className="text-green-700">
-              取り込み完了：店舗 {result.storeCount}件 / 売上データ {result.salesRows}行 / 14項目データ{' '}
-              {result.item14Rows}行 / 加工データ {result.processingRows}行
+              第{result.period}期として取り込み完了：店舗 {result.storeCount}件 / 売上データ{' '}
+              {result.salesRows}行 / 14項目データ {result.item14Rows}行 / 加工データ{' '}
+              {result.processingRows}行
             </p>
           ) : (
             <p className="text-red-700">{result.error}</p>
