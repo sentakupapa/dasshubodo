@@ -71,12 +71,12 @@ npm run start
 
 ## Railwayへのデプロイ（GitHub連携で自動デプロイ）
 
-リポジトリ直下の `railway.toml` でビルド／起動コマンドを定義済みです。Railwayは永続ボリュームをコード（railway.toml）ではなくダッシュボード上で追加する仕組みのため、初回デプロイ後に1手順だけ追加設定が必要です。
+リポジトリ直下の `Dockerfile` でビルド・起動を定義しています（`railway.toml` で `builder = "DOCKERFILE"` を指定）。`better-sqlite3` はネイティブモジュールでコンパイルにPython/ビルドツールが必要なため、RailwayのデフォルトビルダーであるNixpacksだとビルド失敗することがあり、Dockerfileでビルド環境を明示しています。Railwayは永続ボリュームをコード（railway.toml）ではなくダッシュボード上で追加する仕組みのため、初回デプロイ後に1手順だけ追加設定が必要です。
 
 1. [Railway](https://railway.app) にGitHubアカウントでログイン
 2. **New Project** → **Deploy from GitHub repo** を選択し、`sentakupapa/dasshubodo` を選択（未連携なら先にGitHub Appの権限を許可）
 3. ブランチは `claude/annual-dashboard-webapp-ikj8vb` を指定
-4. `railway.toml` が自動検出され、ビルド・起動コマンドが設定された状態でデプロイが始まる
+4. `railway.toml` が自動検出され、Dockerfileベースでビルドが始まる（数分かかります）
 5. デプロイ完了後、サービスの **Settings → Networking → Generate Domain** で公開URL（`https://xxxx.up.railway.app`）を発行
 6. 永続ボリュームを追加する：プロジェクトのキャンバス画面でサービスのタイルを**右クリック**（または「⋯」メニュー）→ **Attach Volume** → Mount Pathに `/data` を指定して保存
    （見つからない場合は `Cmd/Ctrl+K` でコマンドパレットを開き「volume」を検索）
