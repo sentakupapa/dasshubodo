@@ -69,6 +69,27 @@ npm run start
 - 社内ネットワーク限定にしたい場合は、Render側でIP許可リストを設定するか、Renderの発行するURLを社内でのみ共有してください（現状アプリ自体には認証機能がありません）
 - 初回起動時、DBが空であれば同梱の参考データ（`data/seed/store-data.xlsx`）が自動で取り込まれます
 
+## Railwayへのデプロイ（GitHub連携で自動デプロイ）
+
+リポジトリ直下の `railway.toml` でビルド／起動コマンドを定義済みです。Railwayは永続ボリュームをコード（railway.toml）ではなくダッシュボード上で追加する仕組みのため、初回デプロイ後に1手順だけ追加設定が必要です。
+
+1. [Railway](https://railway.app) にGitHubアカウントでログイン
+2. **New Project** → **Deploy from GitHub repo** を選択し、`sentakupapa/dasshubodo` を選択（未連携なら先にGitHub Appの権限を許可）
+3. ブランチは `claude/annual-dashboard-webapp-ikj8vb` を指定
+4. `railway.toml` が自動検出され、ビルド・起動コマンドが設定された状態でデプロイが始まる
+5. デプロイ完了後、サービスの **Settings → Networking → Generate Domain** で公開URL（`https://xxxx.up.railway.app`）を発行
+6. 続けて **Settings → Volumes → New Volume** で永続ボリュームを追加し、マウント先を `/data` に設定
+7. **Variables** タブで環境変数 `DATA_DIR=/data` を追加（ボリュームのマウント先とアプリのDB保存先を一致させるため）
+8. 変数を追加すると自動で再デプロイされる。デプロイ完了後、発行されたURLにアクセスすればダッシュボードが開く
+9. 以降は対象ブランチにpushするたびに自動で再デプロイされる
+
+**注意点**
+
+- ボリュームを追加せずに使うと、再デプロイのたびにアップロードしたデータが消えます。必ず手順6・7を行ってください
+- Railwayは使った分だけの従量課金制です（無料トライアル分を使い切ると課金が発生します）
+- 社内限定にしたい場合は、発行されたURLを社内でのみ共有してください（現状アプリ自体には認証機能がありません）
+- 初回起動時、DBが空であれば同梱の参考データ（`data/seed/store-data.xlsx`）が自動で取り込まれます
+
 ## Excelフォーマット
 
 アップロードするExcelには次の4シートが必要です（シート名は固定）。
