@@ -36,8 +36,9 @@ export async function POST(req: NextRequest) {
     if (err instanceof XlsxParseError) {
       return NextResponse.json({ error: err.message }, { status: 400 });
     }
+    const detail = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
-      { error: 'Excelファイルの読み込み中にエラーが発生しました。ファイル形式を確認してください。' },
+      { error: `Excelファイルの読み込み中にエラーが発生しました: ${detail}` },
       { status: 400 }
     );
   }
