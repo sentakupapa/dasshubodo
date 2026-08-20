@@ -158,8 +158,25 @@ export function upsertPeriodData(payload: ImportPayload): void {
   const deleteItem14ForPeriod = db.prepare(`DELETE FROM item14_records WHERE period = ?`);
   const deleteProcessingForPeriod = db.prepare(`DELETE FROM processing_records WHERE period = ?`);
 
+  const maxSortOrder = db.prepare(`SELECT COALESCE(MAX(sort_order), -1) as m FROM stores`);
+
   const tx = db.transaction((p: ImportPayload) => {
     p.stores.forEach((name, i) => insertStoreIfNew.run(name, i));
+
+    // A store can appear in the data sheets without being listed in 店舗マスタ
+    // (e.g. a newly opened store the master wasn't updated for yet). Add it
+    // too, so it still shows up in the store selector instead of silently
+    // holding data nobody can see.
+    const referencedStores = new Set<string>([
+      ...p.sales.map((r) => r.store),
+      ...p.item14.map((r) => r.store),
+      ...p.processing.map((r) => r.store),
+    ]);
+    let nextOrder = (maxSortOrder.get() as { m: number }).m + 1;
+    for (const name of referencedStores) {
+      const info = insertStoreIfNew.run(name, nextOrder);
+      if (info.changes > 0) nextOrder++;
+    }
 
     const periodsInPayload = new Set(p.sales.map((r) => r.period));
     periodsInPayload.add(p.period);
